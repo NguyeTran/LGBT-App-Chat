@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Admin Dashboard - Reports</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .report-card { border: 1px solid red; padding: 10px; margin-bottom: 20px; }
+        .chat-log { background: #f0f0f0; padding: 10px; max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>⚠️ Admin Report Dashboard</h1>
+    <div id="report-list"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        
+        // Yêu cầu lấy dữ liệu khi mới vào
+        socket.emit('admin_get_data');
+
+        socket.on('admin_data', (reports) => {
+            const list = document.getElementById('report-list');
+            list.innerHTML = '';
+            reports.forEach(r => renderReport(r));
+        });
+
+        socket.on('new_admin_report', (report) => {
+            renderReport(report);
+            alert("CÓ REPORT MỚI!");
+        });
+
+        function renderReport(report) {
+            const div = document.createElement('div');
+            div.className = 'report-card';
+            
+            let chatHtml = report.chatLog.map(m => 
+                `<div>[${m.time}] <b>${m.sender}</b>: ${m.msg}</div>`
+            ).join('');
+
+            div.innerHTML = `
+                <h3>Ticket ID: ${report.id}</h3>
+                <p><b>Người báo cáo:</b> ${report.reporter}</p>
+                <p><b>Lý do:</b> ${report.reason}</p>
+                <h4>Bằng chứng Chat:</h4>
+                <div class="chat-log">${chatHtml || 'Không có tin nhắn nào được lưu'}</div>
+                <button onclick="alert('Đã xử lý (Demo)')">Đánh dấu đã xử lý</button>
+            `;
+            document.getElementById('report-list').prepend(div);
+        }
+    </script>
+</body>
+</html>
