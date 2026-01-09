@@ -1,75 +1,84 @@
-// file: server.js
 const express = require('express');
-const http = require('http');
-const { Server } = require("socket.io");
+const bodyParser = require('body-parser');
+const cors = require('cors');
 const path = require('path');
+const { Pool } = require('pg');
 
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
+// Render sẽ tự động cấp Port, nếu không có thì mặc định là 3000
+const PORT = process.env.PORT || 3000;
 
-app.use(express.static(path.join(__dirname, 'public')));
-
-let waitingQueues = { 'gay': null, 'les': null, 'other': null };
-let roomMessages = {}; 
-let reports = [];
-
-io.on('connection', (socket) => {
-    
-    // --- PHẦN 1: CHAT & MATCH (GIỮ NGUYÊN) ---
-    socket.on('find_match', (userData) => {
-        const type = userData.type;
-        const partner = waitingQueues[type];
-
-        if (partner && partner.id !== socket.id) {
-            const roomID = partner.id + '#' + socket.id;
-            socket.join(roomID);
-            partner.join(roomID);
-            roomMessages[roomID] = [];
-
-            // Báo cho cả 2 biết đã tìm thấy
-            io.to(roomID).emit('match_found', roomID);
-            
-            waitingQueues[type] = null;
-        } else {
-            waitingQueues[type] = socket;
-            socket.emit('waiting', `Đang tìm bạn ${type}...`);
-        }
-    });
-
-    socket.on('send_msg', (data) => {
-        const { roomID, msg } = data;
-        if (roomMessages[roomID]) {
-            roomMessages[roomID].push({ sender: socket.id, msg: msg, time: new Date().toLocaleTimeString() });
-        }
-        socket.to(roomID).emit('receive_msg', msg);
-    });
-
-    socket.on('report_user', (data) => {
-        const { roomID, reason } = data;
-        const evidence = roomMessages[roomID] || [];
-        reports.push({ id: Date.now(), reporter: socket.id, roomID, reason, chatLog: evidence });
-        io.to(roomID).emit('chat_ended', 'Đoạn chat bị hủy do báo cáo.');
-        delete roomMessages[roomID];
-    });
-
-    socket.on('admin_get_data', () => socket.emit('admin_data', reports));
-
-    socket.on('disconnect', () => {
-        for (const [key, waitingSocket] of Object.entries(waitingQueues)) {
-            if (waitingSocket && waitingSocket.id === socket.id) waitingQueues[key] = null;
-        }
-    });
-
-    // --- PHẦN 2: VIDEO CALL (MỚI THÊM) ---
-    // Khi User A có Camera, gửi ID video của A cho User B
-    socket.on('share_video_id', (data) => {
-        const { roomID, peerID } = data;
-        // Gửi ID này cho người kia trong phòng (trừ người gửi)
-        socket.to(roomID).emit('receive_video_id', peerID);
-    });
+// 1. Cấu hình kết nối Database (PostgreSQL)
+// DATABASE_URL sẽ được lấy từ file docker-compose hoặc Render
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
-server.listen(3000, () => {
-    console.log('Server Video chạy tại: http://localhost:3000');
+// 2. Middleware
+app.use(cors());
+app.use(bodyParser.json());
+// Phục vụ giao diện tĩnh từ thư mục 'public' (nơi chứa index.html của bạn)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// 3. API ROUTES (CRUD)
+
+// READ: Lấy danh sách tin nhắn
+app.get('/api/messages', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM messages ORDER BY id ASC');
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Lỗi khi lấy tin nhắn từ Database" });
+    }
+});
+
+// CREATE: Gửi tin nhắn mới
+app.post('/api/messages', async (req, res) => {
+    const { user, content } = req.body;
+    try {
+        const result = await pool.query(
+            'INSERT INTO messages (username, content) VALUES ($1, $2) RETURNING *',
+            [user, content]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Lỗi khi lưu tin nhắn" });
+    }
+});
+
+// DELETE: Xóa một tin nhắn (Để đạt chuẩn CRUD)
+app.delete('/api/messages/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM messages WHERE id = $1', [id]);
+        res.json({ message: "Đã xóa tin nhắn thành công" });
+    } catch (err) {
+        res.status(500).json({ error: "Lỗi khi xóa tin nhắn" });
+    }
+});
+
+// 4. Khởi tạo bảng dữ liệu nếu chưa có (Chỉ dùng cho bản demo)
+const initDb = async () => {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS messages (
+                id SERIAL PRIMARY KEY,
+                username TEXT NOT NULL,
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        console.log("Database đã sẵn sàng!");
+    } catch (err) {
+        console.log("Đang đợi Database khởi động...");
+    }
+};
+initDb();
+
+// 5. Chạy Server
+app.listen(PORT, () => {
+    console.log(`Server LGBT App Chat đang chạy tại: http://localhost:${PORT}`);
 });

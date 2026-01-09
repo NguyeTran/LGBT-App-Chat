@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  # Dịch vụ Backend (Node.js)
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      # Link kết nối tới service 'db' bên dưới
+      - DATABASE_URL=postgres://user:pass@db:5432/lgbt_db
+    depends_on:
+      - db
+    restart: always
+
+  # Dịch vụ Database (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=lgbt_db
+    volumes:
+      # Lưu trữ dữ liệu bền vững, không bị mất khi tắt máy
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  pgdata:

@@ -3,436 +3,317 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LGBT Video Chat MVP - TruEon UI</title>
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <title>TruEon Video Chat</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            background: #f0f2f5;
-            color: #333;
-        }
-        .container {
-            display: grid;
-            grid-template-columns: 250px 1fr 300px;
-            gap: 20px;
-            max-width: 1200px;
-            margin: 20px auto;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            overflow: hidden;
-            min-height: 80vh; /* Tăng chiều cao cho đẹp */
-        }
-        /* Header */
-        .header {
-            grid-column: 1 / -1;
-            display: flex;
-            align-items: center;
-            padding: 10px 20px;
-            background: #fff;
-            border-bottom: 1px solid #eee;
-        }
-        .logo {
-            font-weight: bold;
-            color: #ff6b6b;
-            font-size: 24px;
-            margin-right: 20px;
-            display: flex;
-            align-items: center;
-        }
-        .logo svg {
-            width: 30px;
-            height: 30px;
-            margin-right: 5px;
-        }
-        .user-info {
-            display: flex;
-            align-items: center;
-            margin-left: auto;
-            margin-right: 20px;
-        }
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #ddd;
-            margin-right: 10px;
-            background-size: cover;
-            background-position: center;
-        }
-        .search-bar {
-            flex-grow: 1;
-            max-width: 400px;
-            margin: 0 20px;
-            position: relative;
-        }
-        .search-bar input {
-            width: 100%;
-            padding: 8px 35px 8px 15px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            background: #f9f9f9;
-        }
-        .search-bar svg {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #aaa;
-        }
-        /* Left Sidebar */
-        .left-sidebar {
-            padding: 20px;
-            background: #fff5f7;
-            border-right: 1px solid #eee;
-        }
-        .menu-item {
-            display: flex;
-            align-items: center;
-            padding: 10px 15px;
-            border-radius: 8px;
-            color: #555;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .menu-item:hover {
-            background: #ffe4e9;
-        }
-        .menu-item svg {
-            width: 24px;
-            height: 24px;
-            margin-right: 15px;
-            color: #ff6b6b;
-        }
-        /* Main Content */
-        .main-content {
-            padding: 20px;
-        }
-        .chat-card {
-            background: #fff;
-            border-radius: 10px;
-            border: 1px solid #eee;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        .chat-card h2 {
-            font-size: 18px;
-            margin-bottom: 15px;
-            color: #ff6b6b;
-        }
-        /* Right Sidebar */
-        .right-sidebar {
-            padding: 20px;
-            background: #fff;
-            border-left: 1px solid #eee;
-        }
-        /* Friend List Styles */
-        .friend-list h3 {
-            font-size: 16px;
-            margin-bottom: 15px;
-            color: #555;
-            border-bottom: 2px solid #ffe4e9;
-            padding-bottom: 5px;
-            display: inline-block;
-        }
-        .friend-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-            padding: 8px;
-            border-radius: 8px;
-            transition: background 0.2s;
-            cursor: pointer;
-        }
-        .friend-item:hover {
-            background-color: #f0f2f5;
-        }
-        .friend-item .user-avatar {
-            margin-right: 12px;
-            border: 2px solid #fff;
-            box-shadow: 0 0 0 2px #ff6b6b; /* Viền avatar */
-        }
-        .friend-info {
-            display: flex;
-            flex-direction: column;
-        }
-        .friend-name {
-            font-weight: 600;
-            color: #333;
-            font-size: 14px;
-        }
-        .friend-status {
-            font-size: 12px;
-            color: #4CAF50; /* Màu xanh online */
-            display: flex;
-            align-items: center;
-        }
-        .friend-status::before {
-            content: '';
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            background-color: #4CAF50;
-            border-radius: 50%;
-            margin-right: 5px;
-        }
-
-        /* Chat App Styles */
-        .screen { display: none; }
-        .active { display: block; }
-        #video-container { display: flex; gap: 5px; margin-bottom: 10px; height: 180px; }
-        video { width: 50%; background: #000; border-radius: 8px; object-fit: cover; border: 1px solid #ccc; }
-        .msg { padding: 8px 12px; margin: 5px 0; border-radius: 15px; max-width: 80%; word-wrap: break-word; font-size: 14px; }
-        .me { background: #6200ea; color: white; margin-left: auto; text-align: right; }
-        .partner { background: #e0e0e0; color: black; }
-        #messages { height: 250px; overflow-y: auto; border: 1px solid #ddd; background: white; padding: 10px; margin-bottom: 10px; border-radius: 8px;}
-        button { padding: 12px; margin-top: 5px; cursor: pointer; width: 100%; border: none; border-radius: 8px; font-weight: bold; }
-        .btn-primary { background: #ff6b6b; color: white; border-radius: 20px; }
-        .btn-cam { background: #ff9800; color: white; margin-bottom: 5px; }
-        .btn-danger { background: #ff4444; color: white; width: auto; padding: 5px 15px; float: right; font-size: 12px;}
-        select { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #ccc; }
-        input { border-radius: 20px; border: 1px solid #ccc; }
+        /* --- CSS RESET & GLOBAL --- */
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; background: #f0f2f5; margin: 0; color: #050505; height: 100vh; display: flex; flex-direction: column; }
         
-        /* Placeholder styling */
-        .placeholder-content { display: flex; gap: 15px; margin-bottom: 20px; }
-        .placeholder-circle { width: 50px; height: 50px; border-radius: 50%; background: #e0e0e0; }
-        .placeholder-line { flex-grow: 1; height: 20px; background: #e0e0e0; border-radius: 5px; margin-bottom: 10px; }
-        .placeholder-block { height: 200px; background: #e0e0e0; border-radius: 10px; }
+        /* --- HEADER --- */
+        .header { background: #fff; padding: 0 20px; height: 60px; display: flex; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1); z-index: 100; position: sticky; top: 0; }
+        .logo { font-size: 24px; font-weight: bold; color: #ff6b6b; margin-right: 40px; display: flex; align-items: center; }
+        .logo span { color: #ccc; font-weight: 300; margin-left: 5px; }
+        .search-bar { background: #f0f2f5; border-radius: 20px; padding: 8px 15px; width: 300px; display: flex; align-items: center; color: #65676b; }
+        .search-bar input { border: none; background: transparent; outline: none; margin-left: 10px; width: 100%; }
+        .user-menu { margin-left: auto; display: flex; align-items: center; gap: 10px; font-weight: 600; }
+        .my-avatar { width: 36px; height: 36px; border-radius: 50%; background: #ddd; object-fit: cover; }
 
+        /* --- MAIN LAYOUT (GRID) --- */
+        .main-container { display: flex; flex: 1; overflow: hidden; max-width: 1400px; margin: 0 auto; width: 100%; }
+        
+        /* SIDEBAR TRÁI */
+        .sidebar-left { width: 280px; padding: 20px 10px; overflow-y: auto; display: none; /* Hiện trên Desktop */ }
+        .menu-item { display: flex; align-items: center; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 500; color: #050505; transition: 0.2s; }
+        .menu-item:hover { background: #e4e6eb; }
+        .menu-icon { width: 30px; height: 30px; margin-right: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+
+        /* SIDEBAR PHẢI (BẠN BÈ) */
+        .sidebar-right { width: 280px; padding: 20px 10px; border-left: 1px solid #ddd; background: #fff; overflow-y: auto; display: none; }
+        .friend-title { font-weight: 600; color: #65676b; margin-bottom: 10px; font-size: 15px; }
+        .friend-item { display: flex; align-items: center; padding: 8px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .friend-item:hover { background: #f2f2f2; }
+        .friend-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 2px solid #fff; box-shadow: 0 0 2px rgba(0,0,0,0.2); }
+        .friend-name { font-size: 14px; font-weight: 500; }
+        .friend-status { width: 8px; height: 8px; background: #31a24c; border-radius: 50%; margin-left: auto; }
+
+        /* CONTENT CENTER */
+        .content-center { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+
+        /* SCREENS */
+        .screen { display: none; width: 100%; max-width: 600px; }
+        .active { display: block; }
+
+        /* CARD STYLE */
+        .card { background: #fff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 20px; border: 1px solid #ddd; }
+
+        /* LOGIN SCREEN */
+        .login-box h3 { margin-top: 0; color: #ff6b6b; }
+        .select-style { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ccc; margin: 15px 0; font-size: 16px; }
+        
+        /* CHAT & VIDEO UI */
+        .chat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .status-dot { color: #31a24c; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 5px; }
+        .btn-report { background: #ff4444; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+
+        /* VIDEO AREA */
+        .video-wrapper { background: #000; border-radius: 10px; overflow: hidden; display: flex; height: 220px; margin-bottom: 0; border: 1px solid #333; }
+        video { width: 50%; height: 100%; object-fit: cover; background: #222; }
+        
+        /* STATUS BAR (Xanh dương) */
+        .status-bar { background: #2196f3; color: white; text-align: center; padding: 5px; font-size: 13px; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 5px; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; margin-bottom: 15px; }
+
+        /* CHAT AREA */
+        #messages { height: 300px; overflow-y: auto; padding: 10px; background: #fff; border: 1px solid #eee; border-radius: 8px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+        
+        .msg-row { display: flex; width: 100%; }
+        .msg-bubble { max-width: 70%; padding: 8px 14px; border-radius: 18px; font-size: 15px; word-wrap: break-word; line-height: 1.4; }
+        
+        /* Tin nhắn của tôi (Hồng) */
+        .msg-row.me { justify-content: flex-end; }
+        .msg-row.me .msg-bubble { background: #ff6b6b; color: white; border-bottom-right-radius: 4px; }
+        
+        /* Tin nhắn đối phương (Xám) */
+        .msg-row.partner { justify-content: flex-start; }
+        .msg-row.partner .msg-bubble { background: #e4e6eb; color: #050505; border-bottom-left-radius: 4px; }
+        
+        .system-msg { text-align: center; color: #888; font-size: 12px; font-style: italic; width: 100%; margin: 5px 0; }
+
+        /* INPUT AREA */
+        .input-area { display: flex; gap: 10px; align-items: center; border-top: 1px solid #eee; padding-top: 15px; }
+        .input-style { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid #ccc; outline: none; background: #f0f2f5; }
+        .btn-pink { background: #ff6b6b; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+        .btn-pink:hover { background: #ff5252; }
+        .btn-cam { width: 100%; margin-bottom: 0; border-radius: 0; background: #4caf50; padding: 10px; }
+
+        /* RESPONSIVE */
+        @media (min-width: 900px) {
+            .sidebar-left, .sidebar-right { display: block; }
+        }
     </style>
 </head>
 <body>
 
     <div class="header">
         <div class="logo">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-            </svg>
             TruEon
         </div>
-        <div class="user-info">
-            <div class="user-avatar" style="background-image: url('https://i.pravatar.cc/150?img=68');"></div>
-            <span>User1109</span>
-        </div>
         <div class="search-bar">
-            <input type="text" placeholder="Tìm kiếm bạn bè...">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+            🔍 <input type="text" placeholder="Cưng mún tìm gì hử :>">
+        </div>
+        <div class="user-menu">
+            <img src="https://i.pravatar.cc/150?img=12" class="my-avatar">
+            <span>RandomUser1109</span>
         </div>
     </div>
 
-    <div class="container">
-        <div class="left-sidebar">
-            <div class="menu-item">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                Bạn bè
-            </div>
-            <div class="menu-item">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-                Kỉ niệm
-            </div>
-            <div class="menu-item">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                Nhóm
-            </div>
-            <div class="menu-item">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" /></svg>
-                Trang
-            </div>
-            <div class="menu-item">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                Sự kiện
-            </div>
-            <div class="menu-item">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                Market
-            </div>
-            <div class="menu-item">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                Premium
-            </div>
-            <div class="menu-item">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                Theo dõi
-            </div>
-            <div class="menu-item">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" /></svg>
-                Xem thêm
-            </div>
+    <div class="main-container">
+        
+        <div class="sidebar-left">
+            <div class="menu-item"><span class="menu-icon">👥</span> Bạn bè</div>
+            <div class="menu-item"><span class="menu-icon">❤️</span> Kỉ niệm</div>
+            <div class="menu-item"><span class="menu-icon">🏘️</span> Nhóm</div>
+            <div class="menu-item"><span class="menu-icon">🚩</span> Trang</div>
+            <div class="menu-item"><span class="menu-icon">📅</span> Sự kiện</div>
+            <div class="menu-item"><span class="menu-icon">🛒</span> Market</div>
+            <div class="menu-item" style="color: #ff6b6b;"><span class="menu-icon">💎</span> Premium</div>
         </div>
 
-        <div class="main-content">
-            <div id="login-screen" class="screen active chat-card">
-                <h2 style="text-align: left; color: #ff6b6b; margin-top: 0;">🏳️‍🌈 LGBT Chat Connect</h2>
-                <p>Chào bạn, hãy chọn cộng đồng bạn muốn kết nối:</p>
-                <select id="userType">
+        <div class="content-center">
+            
+            <div id="login-screen" class="screen active card login-box">
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                    <div style="width: 5px; height: 40px; background: #ff6b6b; border-radius: 5px;"></div>
+                    <div>
+                        <h3>LGBT Chat Connect</h3>
+                        <span style="font-size: 13px; color: #666;">Chào bạn, hãy chọn cộng đồng bạn muốn kết nối:</span>
+                    </div>
+                </div>
+                
+                <select id="userType" class="select-style">
                     <option value="gay">Gay (Nam - Nam)</option>
                     <option value="les">Lesbian (Nữ - Nữ)</option>
                     <option value="other">Cộng đồng khác</option>
                 </select>
-                <button class="btn-primary" style="width: auto; padding: 10px 30px; display: block; margin: 0 auto;" onclick="enterApp()">Bắt đầu tham gia</button>
+                
+                <button class="btn-pink" style="width: 100%; border-radius: 8px;" onclick="enterApp()">Bắt đầu tham gia</button>
             </div>
 
-            <div id="match-screen" class="screen chat-card" style="text-align: center; padding-top: 50px;">
-                <div style="font-size: 40px;">🔍</div>
-                <h3>Đang tìm người lạ...</h3>
-                <p>Vui lòng đợi hệ thống ghép đôi.</p>
-                <button onclick="location.reload()" style="background: #ddd; color: #333; width: auto; padding: 10px 30px;">Hủy tìm kiếm</button>
+            <div id="match-screen" class="screen card" style="text-align: center; padding: 50px;">
+                <div style="font-size: 50px; margin-bottom: 20px;">🔍</div>
+                <h3 style="color: #444;">Đang tìm người lạ...</h3>
+                <p style="color: #888;">Vui lòng đợi hệ thống ghép đôi.</p>
+                <button onclick="location.reload()" style="background: #e4e6eb; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: 600;">Hủy tìm kiếm</button>
             </div>
 
-            <div id="chat-screen" class="screen chat-card">
-                <div style="margin-bottom: 5px; overflow: hidden; padding: 5px 0;">
-                    <strong style="color: #4CAF50;">● Đang online</strong>
-                    <button class="btn-danger" onclick="reportUser()">⚠️ Tố cáo</button>
+            <div id="chat-screen" class="screen card" style="padding: 15px;">
+                
+                <div class="chat-header">
+                    <div class="status-dot">● Đang online với người lạ</div>
+                    <button class="btn-report" onclick="reportUser()">⚠️ Báo cáo</button>
                 </div>
 
-                <div id="video-container">
+                <div class="video-wrapper">
                     <video id="localVideo" muted playsinline autoplay></video>
-                    <video id="remoteVideo" playsinline autoplay></video>
+                    <video id="remoteVideo" playsinline autoplay controls></video>
                 </div>
+                
+                <button id="btn-cam" class="btn-pink btn-cam" onclick="startVideoCall()">📹 BẬT CAMERA & MIC</button>
+                <div id="status-text" class="status-bar" style="display:none;">⏳ Đang kết nối video...</div>
 
-                <button class="btn-cam" id="btn-cam" onclick="startVideoCall()">📹 BẬT CAMERA / KẾT NỐI</button>
-                
-                <div id="messages"></div>
-                
-                <div style="display: flex; gap: 5px;">
-                    <input type="text" id="inputMsg" style="flex: 1; padding: 10px;" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter') sendMsg()">
-                    <button class="btn-primary" style="width: auto;" onclick="sendMsg()">Gửi</button>
+                <div id="messages">
+                    </div>
+
+                <div class="input-area">
+                    <input type="text" id="inputMsg" class="input-style" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter') sendMsg()">
+                    <button class="btn-pink" onclick="sendMsg()">Gửi</button>
                 </div>
-                <button onclick="location.reload()" style="background: #eee; color: #555; margin-top: 15px;">Kết thúc trò chuyện</button>
+                <div style="text-align: center; margin-top: 10px;">
+                    <span onclick="location.reload()" style="font-size: 12px; color: #888; cursor: pointer; text-decoration: underline;">Thoát cuộc trò chuyện</span>
+                </div>
             </div>
 
-            <div class="chat-card">
-                <div class="placeholder-content">
-                    <div class="placeholder-circle"></div>
-                    <div>
-                        <div class="placeholder-line" style="width: 200px;"></div>
-                        <div class="placeholder-line" style="width: 150px;"></div>
-                    </div>
-                </div>
-                <div class="placeholder-block"></div>
+        </div>
+
+        <div class="sidebar-right">
+            <div class="friend-title">Bạn bè của bạn</div>
+            
+            <div class="friend-item">
+                <img src="https://i.pravatar.cc/150?img=68" class="friend-avatar">
+                <span class="friend-name">MrGay123</span>
+                <div class="friend-status"></div>
+            </div>
+            
+            <div class="friend-item">
+                <img src="https://i.pravatar.cc/150?img=33" class="friend-avatar">
+                <span class="friend-name">Ivanovich Cutonhuphich</span>
+                <div class="friend-status"></div>
+            </div>
+
+            <div class="friend-item">
+                <img src="https://i.pravatar.cc/150?img=11" class="friend-avatar">
+                <span class="friend-name">Quyhoabaodienabc</span>
+                <div class="friend-status"></div>
+            </div>
+
+            <div class="friend-item">
+                <img src="https://i.pravatar.cc/150?img=59" class="friend-avatar">
+                <span class="friend-name">Rửa chim gác đái</span>
+                <div class="friend-status" style="background: #ccc;"></div>
+            </div>
+
+            <div class="friend-item">
+                <img src="https://i.pravatar.cc/150?img=5" class="friend-avatar">
+                <span class="friend-name">Hồng tỉ tỉ</span>
+                <div class="friend-status"></div>
+            </div>
+             <div class="friend-item">
+                <img src="https://i.pravatar.cc/150?img=8" class="friend-avatar">
+                <span class="friend-name">Hồng đệ đệ</span>
+                <div class="friend-status"></div>
             </div>
         </div>
 
-        <div class="right-sidebar">
-            <div class="friend-list">
-                <h3>Bạn bè trực tuyến</h3>
-                
-                <div class="friend-item">
-                    <div class="user-avatar" style="background-image: url('https://i.pravatar.cc/150?img=12');"></div>
-                    <div class="friend-info">
-                        <span class="friend-name">MrGay123</span>
-                        <span class="friend-status">Đang Online</span>
-                    </div>
-                </div>
-
-                <div class="friend-item">
-                    <div class="user-avatar" style="background-image: url('https://i.pravatar.cc/150?img=33');"></div>
-                    <div class="friend-info">
-                        <span class="friend-name">Ivanovich</span>
-                        <span class="friend-status">Đang Online</span>
-                    </div>
-                </div>
-
-                <div class="friend-item">
-                    <div class="user-avatar" style="background-image: url('https://i.pravatar.cc/150?img=59');"></div>
-                    <div class="friend-info">
-                        <span class="friend-name">Quyhoabaodien</span>
-                        <span class="friend-status">Đang Online</span>
-                    </div>
-                </div>
-
-                <div class="friend-item">
-                    <div class="user-avatar" style="background-image: url('https://i.pravatar.cc/150?img=11');"></div>
-                    <div class="friend-info">
-                        <span class="friend-name">Hồng Tỉ Tỉ</span>
-                        <span class="friend-status">Đang Online</span>
-                    </div>
-                </div>
-
-                <div class="friend-item">
-                    <div class="user-avatar" style="background-image: url('https://i.pravatar.cc/150?img=8');"></div>
-                    <div class="friend-info">
-                        <span class="friend-name">Hồng Đệ Đệ</span>
-                        <span class="friend-status">Đang Online</span>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
+        const socket = io({ transports: ['websocket', 'polling'] });
         let currentRoomID = null;
-        
-        let myPeer = new Peer(undefined, {
+        let myStream = null;
+        let myPeerID = null;
+
+        // CẤU HÌNH TURN SERVER (MẠNH MẼ)
+        const myPeer = new Peer(undefined, {
             config: {
-                'iceServers': [
-                    { url: 'stun:stun.l.google.com:19302' },
-                    { url: 'stun:stun1.l.google.com:19302' }
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { 
+                        urls: "turn:openrelay.metered.ca:80",
+                        username: "openrelayproject",
+                        credential: "openrelayproject"
+                    },
+                    { 
+                        urls: "turn:openrelay.metered.ca:443",
+                        username: "openrelayproject",
+                        credential: "openrelayproject"
+                    },
+                    { 
+                        urls: "turn:openrelay.metered.ca:443?transport=tcp",
+                        username: "openrelayproject",
+                        credential: "openrelayproject"
+                    }
                 ]
             }
         });
 
-        let myPeerID = null;
-        let myStream = null;
+        myPeer.on('open', id => { myPeerID = id; console.log("ID:", id); });
 
-        myPeer.on('open', id => {
-            myPeerID = id;
-            console.log("My Peer ID:", id);
-        });
-
+        // NHẬN CUỘC GỌI
         myPeer.on('call', call => {
             navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
                 myStream = stream;
                 addVideo('localVideo', stream);
                 call.answer(stream);
-                call.on('stream', userVideoStream => {
-                    addVideo('remoteVideo', userVideoStream);
-                });
-            }).catch(err => {
-                alert("Bạn cần cho phép Camera để nhận cuộc gọi video!");
-            });
+                call.on('stream', userStream => addVideo('remoteVideo', userStream));
+            }).catch(e => alert("Vui lòng cấp quyền Camera/Mic!"));
         });
 
+        // GỌI ĐI
         function startVideoCall() {
-            if(!myPeerID) return alert("Chưa kết nối được máy chủ Video. Vui lòng đợi 2s rồi thử lại.");
+            if(!myPeerID) return alert("Đang kết nối server... Đợi 2s");
             navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
                 myStream = stream;
                 addVideo('localVideo', stream);
                 socket.emit('share_video_id', { roomID: currentRoomID, peerID: myPeerID });
-                document.getElementById('btn-cam').innerText = "Đang chờ đối phương...";
-                document.getElementById('btn-cam').disabled = true;
-                addMsg('System', 'Đã bật camera. Đang đợi người kia bật...', true);
-            }).catch(err => {
-                alert("Lỗi: Không thể truy cập Camera.");
-            });
+                
+                // UI Update
+                document.getElementById('btn-cam').style.display = 'none';
+                document.getElementById('status-text').style.display = 'block';
+                addMsg('System', 'Đang kết nối video...', true);
+            }).catch(e => alert("Không bật được Camera!"));
         }
 
-        socket.on('receive_video_id', (partnerPeerID) => {
-            addMsg('System', 'Đối phương đã bật camera. Đang kết nối...', false);
+        socket.on('receive_video_id', (partnerID) => {
+            addMsg('System', 'Đối phương đã bật cam...', false);
             if(myStream) {
-                const call = myPeer.call(partnerPeerID, myStream);
-                call.on('stream', userVideoStream => addVideo('remoteVideo', userVideoStream));
+                connectToPeer(partnerID, myStream);
             } else {
                 navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
                     myStream = stream;
                     addVideo('localVideo', stream);
-                    const call = myPeer.call(partnerPeerID, stream);
-                    call.on('stream', userVideoStream => addVideo('remoteVideo', userVideoStream));
+                    connectToPeer(partnerID, stream);
                 });
             }
         });
 
-        function addVideo(elementId, stream) {
-            const video = document.getElementById(elementId);
-            video.srcObject = stream;
-            video.onloadedmetadata = function(e) { video.play(); };
+        function connectToPeer(partnerID, stream) {
+            setTimeout(() => {
+                const call = myPeer.call(partnerID, stream);
+                call.on('stream', remoteStream => addVideo('remoteVideo', remoteStream));
+                // Ẩn nút cam khi kết nối xong
+                document.getElementById('btn-cam').style.display = 'none';
+                document.getElementById('status-text').innerText = "Đã kết nối video";
+                document.getElementById('status-text').style.display = 'block';
+                document.getElementById('status-text').style.background = '#4caf50';
+            }, 1000);
         }
 
+        function addVideo(id, stream) {
+            const video = document.getElementById(id);
+            video.srcObject = stream;
+            if (id === 'localVideo') {
+                video.muted = true;
+                video.controls = false;
+            } else {
+                video.muted = false;
+                video.controls = true;
+                video.play().catch(e => console.log("Autoplay blocked"));
+            }
+        }
+
+        // --- APP LOGIC ---
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -441,48 +322,53 @@
         function enterApp() {
             const type = document.getElementById('userType').value;
             showScreen('match-screen');
-            socket.emit('find_match', { type: type });
+            socket.emit('find_match', { type });
         }
 
         socket.on('match_found', (roomID) => {
             currentRoomID = roomID;
             showScreen('chat-screen');
-            addMsg('System', 'Đã kết nối! Bạn có thể chat hoặc gọi video.', false);
+            addMsg('System', 'Đã kết nối! Say hi 👋', false);
         });
 
         function sendMsg() {
-            const msg = document.getElementById('inputMsg').value;
+            const input = document.getElementById('inputMsg');
+            const msg = input.value;
             if(msg && currentRoomID) {
-                socket.emit('send_msg', { roomID: currentRoomID, msg: msg });
                 addMsg('Bạn', msg, true);
-                document.getElementById('inputMsg').value = '';
+                socket.emit('send_msg', { roomID: currentRoomID, msg });
+                input.value = '';
             }
         }
-        socket.on('receive_msg', (msg) => addMsg('Người lạ', msg, false));
-        
+
+        socket.on('receive_msg', (msg) => { addMsg('Người lạ', msg, false); });
+
         function addMsg(sender, text, isMe) {
-            const div = document.createElement('div');
-            div.className = `msg ${isMe ? 'me' : 'partner'}`;
+            const row = document.createElement('div');
+            row.className = `msg-row ${isMe ? 'me' : 'partner'}`;
+            
             if(sender === 'System') {
-                div.style = "background: none; color: #888; text-align: center; width: 100%; font-size: 12px; font-style: italic;";
+                const sysDiv = document.createElement('div');
+                sysDiv.className = 'system-msg';
+                sysDiv.innerText = text;
+                document.getElementById('messages').appendChild(sysDiv);
+            } else {
+                const bubble = document.createElement('div');
+                bubble.className = 'msg-bubble';
+                bubble.innerText = text;
+                row.appendChild(bubble);
+                document.getElementById('messages').appendChild(row);
             }
-            div.innerText = sender === 'System' ? text : `${sender}: ${text}`;
             const box = document.getElementById('messages');
-            box.appendChild(div);
             box.scrollTop = box.scrollHeight;
         }
 
         function reportUser() {
-            if(confirm("Tố cáo người này?")) {
-                const reason = prompt("Lý do:", "Quấy rối");
-                if(reason) {
-                    socket.emit('report_user', { roomID: currentRoomID, reason: reason });
-                    alert("Đã báo cáo.");
-                    location.reload();
-                }
+            if(confirm("Báo cáo và thoát?")) {
+                socket.emit('report_user', { roomID: currentRoomID });
+                location.reload();
             }
         }
-
         socket.on('chat_ended', (msg) => { alert(msg); location.reload(); });
     </script>
 </body>
